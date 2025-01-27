@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seizure Diary</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .function-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .year {
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .year-nav {
+            font-size: 20px;
+            padding: 5px 10px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 1px solid black;
+            background: white;
+        }
+
+        .summary {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .print-btn {
+            margin-left: auto;
+            padding: 8px 15px;
+            cursor: pointer;
+            border: 1px solid black;
+            background: white;
+            border-radius: 4px;
+        }
+
+        .diary-table {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .diary-table th, .diary-table td {
+            border: 1px solid black;
+            padding: 2px;
+            text-align: center;
+            height: 60px;
+            width: calc(100% / 32);
+        }
+
+        .diary-table th {
+            background-color: #f0f0f0;
+        }
+
+        .cell-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 2px solid black;
+            z-index: 1000;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-row {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: 1px solid black;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .btn.active {
+            background: black;
+            color: white;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="function-bar">
+        <span class="year"></span>
+        <button class="year-nav" onclick="changeYear(-1)"><<</button>
+        <button class="year-nav" onclick="changeYear(1)">>></button>
+        <div class="summary">
+            <span>3 month summary:</span>
+            <span>Convulsive seizure days: <span id="ctot">0</span></span>
+            <span>Non-convulsive seizure days: <span id="nctot">0</span></span>
+            <span>Missed ASM days: <span id="masm">0</span></span>
+        </div>
+        <button class="print-btn" onclick="printSummary()">Print Summary</button>
+    </div>
+
+    <table class="diary-table">
+        <thead>
+            <tr>
+                <th>Month</th>
+                <script>
+                    for (let i = 1; i <= 31; i++) {
+                        document.write(`<th>${i}</th>`);
+                    }
+                </script>
+            </tr>
+        </thead>
+        <tbody>
+            <script>
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                months.forEach(month => {
+                    document.write(`
+                        <tr>
+                            <th>${month}</th>
+                            ${Array(31).fill().map((_, i) => `
+                                <td onclick="openModal('${month}', ${i + 1})">
+                                    <div class="cell-content">
+                                        <div class="seizure"></div>
+                                        <div class="headache"></div>
+                                        <div class="asm"></div>
+                                    </div>
+                                </td>
+                            `).join('')}
+                        </tr>
+                    `);
+                });
+            </script>
+        </tbody>
+    </table>
+
+    <div class="overlay"></div>
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-date"></h3>
+            <button class="btn" onclick="closeModal()">Close</button>
+        </div>
+        <div class="modal-row">
+            <span>Did you have a:</span>
+            <button class="btn seizure-btn" data-type="C">Convulsive seizure</button>
+            <button class="btn seizure-btn" data-type="NC">Non-convulsive seizure</button>
+        </div>
+        <div class="modal-row">
+            <span>Severity:</span>
+            <button class="btn severity-btn" data-severity="mild">Mild</button>
+            <button class="btn severity-btn" data-severity="mod">Moderate</button>
+            <button class="btn severity-btn" data-severity="sev">Severe</button>
+        </div>
+        <div class="modal-row">
+            <span>ASM:</span>
+            <button class="btn asm-btn">Did you miss your anti-seizure medication</button>
+        </div>
+    </div>
+
+    <script>
+        let currentYear = new Date().getFullYear();
+        let selectedCell = null;
+        
+        function updateYear() {
+            document.querySelector('.year').textContent = currentYear;
+            loadData();
+            updateSummary();
+        }
+
+        function changeYear(delta) {
+            currentYear += delta;
+            updateYear();
+        }
+
+        function getStorageKey(month, day) {
+            return `seizure_${currentYear}_${month}_${day}`;
+        }
+
+        function saveData(month, day, data) {
+            localStorage.setItem(getStorageKey(month, day), JSON.stringify(data));
+            updateSummary();
+        }
+
+        function loadData() {
+            document.querySelectorAll('.diary-table td').forEach((td, index) => {
+                const month = months[Math.floor(index / 31)];
+                const day = (index % 31) + 1;
+                const data = JSON.parse(localStorage.getItem(getStorageKey(month, day)) || '{}');
+                
+                const content = td.querySelector('.cell-content');
+                content.querySelector('.seizure').textContent = data.seizure || '';
+                content.querySelector('.headache').textContent = data.headache || '';
+                content.querySelector('.asm').textContent = data.asm || '';
+            });
+        }
+
+        function updateSummary() {
+            const today = new Date();
+            let ctot = 0, nctot = 0, masm = 0;
+            
+            // Calculate date 90 days ago
+            const startDate = new Date();
+            startDate.setDate(today.getDate() - 90);
+            
+            // Loop through the last 90 days
+            for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+                const year = d.getFullYear();
+                const month = months[d.getMonth()];
+                const day = d.getDate();
+                const key = `seizure_${year}_${month}_${day}`;
+                const data = JSON.parse(localStorage.getItem(key) || '{}');
+                
+                if (data.seizure === 'C') ctot++;
+                if (data.seizure === 'NC') nctot++;
+                if (data.asm === 'x') masm++;
+            }
+            
+            document.getElementById('ctot').textContent = ctot;
+            document.getElementById('nctot').textContent = nctot;
+            document.getElementById('masm').textContent = masm;
+        }
+
+        function openModal(month, day) {
+            selectedCell = { month, day };
+            document.querySelector('.modal-date').textContent = `${month} ${day}, ${currentYear}`;
+            document.querySelector('.modal').style.display = 'block';
+            document.querySelector('.overlay').style.display = 'block';
+            
+            // Load existing data
+            const data = JSON.parse(localStorage.getItem(getStorageKey(month, day)) || '{}');
+            
+            // Reset all buttons
+            document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Set active states based on existing data
+            if (data.seizure) {
+                document.querySelector(`.seizure-btn[data-type="${data.seizure}"]`).classList.add('active');
+            }
+            if (data.headache) {
+                document.querySelector(`.severity-btn[data-severity="${data.headache}"]`).classList.add('active');
+            }
+            if (data.asm === 'x') {
+                document.querySelector('.asm-btn').classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            document.querySelector('.modal').style.display = 'none';
+            document.querySelector('.overlay').style.display = 'none';
+        }
+
+        // Event listeners for modal buttons
+        document.querySelectorAll('.seizure-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.seizure-btn').forEach(b => b.classList.remove('active'));
+                const data = JSON.parse(localStorage.getItem(getStorageKey(selectedCell.month, selectedCell.day)) || '{}');
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                    data.seizure = '';
+                } else {
+                    this.classList.add('active');
+                    data.seizure = this.dataset.type;
+                }
+                saveData(selectedCell.month, selectedCell.day, data);
+                loadData();
+            });
+        });
+
+        document.querySelectorAll('.severity-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('active'));
+                const data = JSON.parse(localStorage.getItem(getStorageKey(selectedCell.month, selectedCell.day)) || '{}');
+                if (this.classList.contains('active')) {
+                    this.classList.remove('active');
+                    data.headache = '';
+                } else {
+                    this.classList.add('active');
+                    data.headache = this.dataset.severity;
+                }
+                saveData(selectedCell.month, selectedCell.day, data);
+                loadData();
+            });
+        });
+
+        document.querySelector('.asm-btn').addEventListener('click', function() {
+            const data = JSON.parse(localStorage.getItem(getStorageKey(selectedCell.month, selectedCell.day)) || '{}');
+            if (this.classList.contains('active')) {
+                this.classList.remove('active');
+                data.asm = '';
+            } else {
+                this.classList.add('active');
+                data.asm = 'x';
+            }
+            saveData(selectedCell.month, selectedCell.day, data);
+            loadData();
+        });
+
+        function printSummary() {
+            window.print();
+        }
+
+        // Initialize
+        updateYear();
+    </script>
+</body>
+</html>

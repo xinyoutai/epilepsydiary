@@ -105,7 +105,7 @@
             gap: 2px;
         }
 
-        .factors {
+        .triggers {
             font-size: 10px;
             max-width: 100%;
             overflow: hidden;
@@ -182,6 +182,9 @@
             .print-btn {
                 display: none;
             }
+            @page {
+                size: landscape;
+            }
         }
     </style>
 </head>
@@ -223,7 +226,7 @@
                                     <div class="cell-content">
                                         <div class="seizure"></div>
                                         <div class="asm"></div>
-                                        <div class="factors"></div>
+                                        <div class="triggers"></div>
                                     </div>
                                 </td>
                             `).join('')}
@@ -243,17 +246,17 @@
         <div class="modal-row">
             <span>Did you have a:</span>
             <button class="btn seizure-btn" data-type="C">Convulsive seizure</button>
-            <button class="btn seizure-btn" data-type="NC">Non-convulsive seizure</button>
+            <button class="btn seizure-btn" data-type="F">Focal non-convulsive seizure</button>
         </div>
         <div class="modal-row">
             <span>ASM:</span>
             <button class="btn asm-btn">Did you miss your anti-seizure medication</button>
         </div>
         <div class="modal-row">
-            <span>Factors:</span>
-            <button class="btn factor-btn" data-factor="alcohol">Alcohol</button>
-            <button class="btn factor-btn" data-factor="poor sleep">Poor Sleep</button>
-            <button class="btn factor-btn" data-factor="illness">Illness</button>
+            <span>Triggers:</span>
+            <button class="btn trigger-btn" data-trigger="alcohol">Alcohol</button>
+            <button class="btn trigger-btn" data-trigger="poor sleep">Poor Sleep</button>
+            <button class="btn trigger-btn" data-trigger="illness">Illness</button>
         </div>
     </div>
 
@@ -290,7 +293,7 @@
                 const content = td.querySelector('.cell-content');
                 content.querySelector('.seizure').textContent = data.seizure || '';
                 content.querySelector('.asm').textContent = data.asm || '';
-                content.querySelector('.factors').textContent = (data.factors || []).join(', ');
+                content.querySelector('.triggers').textContent = (data.triggers || []).join(', ');
             });
         }
 
@@ -309,7 +312,7 @@
                 const data = JSON.parse(localStorage.getItem(key) || '{}');
                 
                 if (data.seizure === 'C') ctot++;
-                if (data.seizure === 'NC') nctot++;
+                if (data.seizure === 'F') nctot++;
                 if (data.asm === 'x') masm++;
             }
             
@@ -334,9 +337,9 @@
             if (data.asm === 'x') {
                 document.querySelector('.asm-btn').classList.add('active');
             }
-            if (data.factors) {
-                data.factors.forEach(factor => {
-                    document.querySelector(`.factor-btn[data-factor="${factor}"]`).classList.add('active');
+            if (data.triggers) {
+                data.triggers.forEach(trigger => {
+                    document.querySelector(`.trigger-btn[data-trigger="${trigger}"]`).classList.add('active');
                 });
             }
         }
@@ -375,22 +378,22 @@
             loadData();
         });
 
-        document.querySelectorAll('.factor-btn').forEach(btn => {
+        document.querySelectorAll('.trigger-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const data = JSON.parse(localStorage.getItem(getStorageKey(selectedCell.month, selectedCell.day)) || '{}');
-                data.factors = data.factors || [];
-                const factor = this.dataset.factor;
+                data.triggers = data.triggers || [];
+                const trigger = this.dataset.trigger;
                 
                 if (this.classList.contains('active')) {
                     this.classList.remove('active');
-                    data.factors = data.factors.filter(f => f !== factor);
+                    data.triggers = data.triggers.filter(t => t !== trigger);
                 } else {
                     this.classList.add('active');
-                    data.factors.push(factor);
+                    data.triggers.push(trigger);
                 }
                 
-                if (data.factors.length === 0) {
-                    delete data.factors;
+                if (data.triggers.length === 0) {
+                    delete data.triggers;
                 }
                 
                 saveData(selectedCell.month, selectedCell.day, data);

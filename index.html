@@ -58,15 +58,44 @@
             table-layout: fixed;
         }
 
+        /* Make first column wider for "Month" */
+        .diary-table th:first-child,
+        .diary-table td:first-child {
+            width: 70px;
+        }
+
+        /* Make other columns equal width */
+        .diary-table th:not(:first-child),
+        .diary-table td:not(:first-child) {
+            width: calc((100% - 70px) / 31);
+        }
+
         .diary-table th, .diary-table td {
-            border: 1px solid black;
+            border: 1px solid #ccc;
             padding: 2px;
             text-align: center;
             height: 60px;
-            width: calc(100% / 32);
         }
 
-        .diary-table th {
+        /* Darker borders for header row */
+        .diary-table thead th {
+            border-top: 2px solid black;
+            border-bottom: 2px solid black;
+        }
+
+        .diary-table thead th:first-child {
+            border-left: 2px solid black;
+        }
+
+        .diary-table thead th:last-child {
+            border-right: 2px solid black;
+        }
+
+        /* Darker borders for first column */
+        .diary-table th:first-child,
+        .diary-table td:first-child {
+            border-left: 2px solid black;
+            border-right: 2px solid black;
             background-color: #f0f0f0;
         }
 
@@ -132,6 +161,7 @@
         }
     </style>
 </head>
+<!-- Rest of the HTML and JavaScript remains exactly the same -->
 <body>
     <div class="function-bar">
         <span class="year"></span>

@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seizure Diary</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
+            font-family: Arial, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -21,19 +23,20 @@
             flex-wrap: wrap;
         }
 
-        .year {
+        .year-display {
             font-size: 24px;
             font-weight: bold;
             margin-right: 10px;
         }
 
         .year-nav {
-            font-size: 20px;
+            font-size: 18px;
             padding: 5px 10px;
             margin: 0 5px;
             cursor: pointer;
-            border: 1px solid black;
+            border: 1px solid #000;
             background: white;
+            border-radius: 4px;
         }
 
         .summary {
@@ -46,10 +49,10 @@
         .print-btn {
             margin-left: auto;
             padding: 8px 15px;
-            cursor: pointer;
-            border: 1px solid black;
+            border: 1px solid #000;
             background: white;
             border-radius: 4px;
+            cursor: pointer;
         }
 
         .diary-table {
@@ -58,74 +61,50 @@
             table-layout: fixed;
         }
 
-        .diary-table th:first-child,
-        .diary-table td:first-child {
-            width: 100px;
-        }
-
-        .diary-table th:not(:first-child),
-        .diary-table td:not(:first-child) {
-            width: calc((100% - 100px) / 31);
-        }
-
         .diary-table th, .diary-table td {
-            border: 1px solid #ccc;
+            border: 1px solid #000;
             padding: 2px;
             text-align: center;
+            width: calc(100% / 32);
+        }
+
+        .diary-table th {
+            background: #f0f0f0;
+        }
+
+        .diary-cell {
             height: 60px;
-        }
-
-        .diary-table thead th {
-            border-top: 2px solid black;
-            border-bottom: 2px solid black;
-        }
-
-        .diary-table thead th:first-child {
-            border-left: 2px solid black;
-        }
-
-        .diary-table thead th:last-child {
-            border-right: 2px solid black;
-        }
-
-        .diary-table th:first-child,
-        .diary-table td:first-child {
-            border-left: 2px solid black;
-            border-right: 2px solid black;
-            background-color: #f0f0f0;
-        }
-
-        .cell-content {
+            cursor: pointer;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
+            justify-content: space-between;
             font-size: 12px;
-            gap: 2px;
         }
 
-        .triggers {
-            font-size: 10px;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+        .diary-cell > div {
+            padding: 2px 0;
         }
 
+        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
             padding: 20px;
-            border: 2px solid black;
-            z-index: 1000;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            min-width: 400px;
+            min-width: 300px;
         }
 
         .modal-header {
@@ -135,62 +114,40 @@
             margin-bottom: 20px;
         }
 
-        .modal-row {
-            margin: 15px 0;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
+        .close-btn {
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 20px;
         }
 
-        .btn {
+        .modal-row {
+            margin: 15px 0;
+        }
+
+        .toggle-btn {
             padding: 8px 15px;
-            border: 1px solid black;
+            margin: 0 5px;
+            border: 2px solid #000;
             background: white;
             border-radius: 20px;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .btn:hover {
-            background: #f0f0f0;
-        }
-
-        .btn.active {
-            background: black;
+        .toggle-btn.active {
+            background: #000;
             color: white;
         }
 
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
-        }
-
-        @media print {
-            .modal, .overlay {
-                display: none !important;
-            }
-            body {
-                padding: 0;
-            }
-            .print-btn {
-                display: none;
-            }
-            @page {
-                size: landscape;
-            }
+        .triggers-row .toggle-btn.active {
+            background: #000;
+            color: white;
         }
     </style>
 </head>
 <body>
     <div class="function-bar">
-        <span class="year"></span>
+        <span class="year-display"></span>
         <button class="year-nav" onclick="changeYear(-1)"><<</button>
         <button class="year-nav" onclick="changeYear(1)">>></button>
         <div class="summary">
@@ -206,207 +163,219 @@
         <thead>
             <tr>
                 <th>Month</th>
-                <script>
-                    for (let i = 1; i <= 31; i++) {
-                        document.write(`<th>${i}</th>`);
-                    }
-                </script>
             </tr>
         </thead>
-        <tbody>
-            <script>
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                months.forEach(month => {
-                    document.write(`
-                        <tr>
-                            <th>${month}</th>
-                            ${Array(31).fill().map((_, i) => `
-                                <td onclick="openModal('${month}', ${i + 1})">
-                                    <div class="cell-content">
-                                        <div class="seizure"></div>
-                                        <div class="asm"></div>
-                                        <div class="triggers"></div>
-                                    </div>
-                                </td>
-                            `).join('')}
-                        </tr>
-                    `);
-                });
-            </script>
-        </tbody>
+        <tbody></tbody>
     </table>
 
-    <div class="overlay"></div>
     <div class="modal">
-        <div class="modal-header">
-            <h3 class="modal-date"></h3>
-            <button class="btn" onclick="closeModal()">Close</button>
-        </div>
-        <div class="modal-row">
-            <span>Did you have a:</span>
-            <button class="btn seizure-btn" data-type="C">Convulsive seizure</button>
-            <button class="btn seizure-btn" data-type="F">Focal non-convulsive seizure</button>
-        </div>
-        <div class="modal-row">
-            <span>ASM:</span>
-            <button class="btn asm-btn">Did you miss your anti-seizure medication</button>
-        </div>
-        <div class="modal-row">
-            <span>Triggers:</span>
-            <button class="btn trigger-btn" data-trigger="alcohol">Alcohol</button>
-            <button class="btn trigger-btn" data-trigger="poor sleep">Poor Sleep</button>
-            <button class="btn trigger-btn" data-trigger="illness">Illness</button>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-date"></h3>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-row">
+                <span>Did you have a:</span>
+                <button class="toggle-btn" data-type="seizure" data-value="C">Convulsive seizure</button>
+                <button class="toggle-btn" data-type="seizure" data-value="F">Focal non-convulsive seizure</button>
+            </div>
+            <div class="modal-row">
+                <span>ASM:</span>
+                <button class="toggle-btn" data-type="asm" data-value="x">Did you miss your anti-seizure medication</button>
+            </div>
+            <div class="modal-row triggers-row">
+                <span>Triggers:</span>
+                <button class="toggle-btn" data-type="trigger" data-value="alcohol">Alcohol</button>
+                <button class="toggle-btn" data-type="trigger" data-value="poor sleep">Poor sleep</button>
+                <button class="toggle-btn" data-type="trigger" data-value="illness">Illness</button>
+                <button class="toggle-btn" data-type="trigger" data-value="other">Other</button>
+            </div>
         </div>
     </div>
 
     <script>
         let currentYear = new Date().getFullYear();
-        let selectedCell = null;
+        let selectedDate = null;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
-        function updateYear() {
-            document.querySelector('.year').textContent = currentYear;
+        // Initialize the diary
+        function initDiary() {
+            updateYearDisplay();
+            createTable();
             loadData();
             updateSummary();
         }
 
+        function updateYearDisplay() {
+            document.querySelector('.year-display').textContent = currentYear;
+        }
+
+        function createTable() {
+            const thead = document.querySelector('.diary-table thead tr');
+            const tbody = document.querySelector('.diary-table tbody');
+            
+            // Clear existing content
+            while(thead.children.length > 1) thead.removeChild(thead.lastChild);
+            tbody.innerHTML = '';
+
+            // Create header
+            for(let day = 1; day <= 31; day++) {
+                const th = document.createElement('th');
+                th.textContent = day;
+                thead.appendChild(th);
+            }
+
+            // Create rows
+            months.forEach(month => {
+                const tr = document.createElement('tr');
+                const monthCell = document.createElement('td');
+                monthCell.textContent = month;
+                tr.appendChild(monthCell);
+
+                for(let day = 1; day <= 31; day++) {
+                    const td = document.createElement('td');
+                    const cell = document.createElement('div');
+                    cell.className = 'diary-cell';
+                    cell.setAttribute('data-date', `${currentYear}-${month}-${day}`);
+                    
+                    for(let i = 0; i < 3; i++) {
+                        const div = document.createElement('div');
+                        cell.appendChild(div);
+                    }
+
+                    cell.onclick = () => openModal(`${month} ${day}, ${currentYear}`, cell);
+                    td.appendChild(cell);
+                    tr.appendChild(td);
+                }
+
+                tbody.appendChild(tr);
+            });
+        }
+
         function changeYear(delta) {
             currentYear += delta;
-            updateYear();
+            initDiary();
         }
 
-        function getStorageKey(month, day) {
-            return `seizure_${currentYear}_${month}_${day}`;
+        function openModal(date, cell) {
+            selectedDate = cell.getAttribute('data-date');
+            document.getElementById('modal-date').textContent = date;
+            
+            // Reset all buttons
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Set current values
+            const data = loadEntry(selectedDate);
+            if(data) {
+                if(data.seizure) {
+                    document.querySelector(`.toggle-btn[data-type="seizure"][data-value="${data.seizure}"]`)?.classList.add('active');
+                }
+                if(data.asm) {
+                    document.querySelector(`.toggle-btn[data-type="asm"][data-value="x"]`)?.classList.add('active');
+                }
+                if(data.triggers) {
+                    data.triggers.forEach(trigger => {
+                        document.querySelector(`.toggle-btn[data-type="trigger"][data-value="${trigger}"]`)?.classList.add('active');
+                    });
+                }
+            }
+
+            document.querySelector('.modal').style.display = 'block';
         }
 
-        function saveData(month, day, data) {
-            localStorage.setItem(getStorageKey(month, day), JSON.stringify(data));
+        function closeModal() {
+            document.querySelector('.modal').style.display = 'none';
+            selectedDate = null;
+        }
+
+        // Handle button clicks in modal
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.onclick = function() {
+                const type = this.getAttribute('data-type');
+                const value = this.getAttribute('data-value');
+
+                if(type === 'seizure' || type === 'asm') {
+                    // Unselect other buttons in the same row
+                    this.parentElement.querySelectorAll('.toggle-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                }
+
+                this.classList.toggle('active');
+                saveEntry();
+            };
+        });
+
+        function saveEntry() {
+            if(!selectedDate) return;
+
+            const entry = {
+                seizure: document.querySelector('.toggle-btn[data-type="seizure"].active')?.getAttribute('data-value') || '',
+                asm: document.querySelector('.toggle-btn[data-type="asm"].active') ? 'x' : '',
+                triggers: Array.from(document.querySelectorAll('.toggle-btn[data-type="trigger"].active')).map(btn => btn.getAttribute('data-value'))
+            };
+
+            localStorage.setItem(selectedDate, JSON.stringify(entry));
+            updateCell(selectedDate);
             updateSummary();
         }
 
+        function loadEntry(date) {
+            const data = localStorage.getItem(date);
+            return data ? JSON.parse(data) : null;
+        }
+
         function loadData() {
-            document.querySelectorAll('.diary-table td').forEach((td, index) => {
-                const month = months[Math.floor(index / 31)];
-                const day = (index % 31) + 1;
-                const data = JSON.parse(localStorage.getItem(getStorageKey(month, day)) || '{}');
-                
-                const content = td.querySelector('.cell-content');
-                content.querySelector('.seizure').textContent = data.seizure || '';
-                content.querySelector('.asm').textContent = data.asm || '';
-                content.querySelector('.triggers').textContent = (data.triggers || []).join(', ');
+            document.querySelectorAll('.diary-cell').forEach(cell => {
+                const date = cell.getAttribute('data-date');
+                updateCell(date);
             });
+        }
+
+        function updateCell(date) {
+            const cell = document.querySelector(`.diary-cell[data-date="${date}"]`);
+            const data = loadEntry(date);
+            
+            if(data) {
+                cell.children[0].textContent = data.seizure || '';
+                cell.children[1].textContent = data.asm || '';
+                cell.children[2].textContent = (data.triggers || []).join(', ');
+            } else {
+                Array.from(cell.children).forEach(div => div.textContent = '');
+            }
         }
 
         function updateSummary() {
             const today = new Date();
             let ctot = 0, nctot = 0, masm = 0;
-            
-            const startDate = new Date();
-            startDate.setDate(today.getDate() - 90);
-            
-            for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-                const year = d.getFullYear();
-                const month = months[d.getMonth()];
-                const day = d.getDate();
-                const key = `seizure_${year}_${month}_${day}`;
-                const data = JSON.parse(localStorage.getItem(key) || '{}');
-                
-                if (data.seizure === 'C') ctot++;
-                if (data.seizure === 'F') nctot++;
-                if (data.asm === 'x') masm++;
+
+            // Check last 90 days
+            for(let i = 0; i < 90; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dateStr = `${date.getFullYear()}-${months[date.getMonth()]}-${date.getDate()}`;
+                const entry = loadEntry(dateStr);
+
+                if(entry) {
+                    if(entry.seizure === 'C') ctot++;
+                    if(entry.seizure === 'F') nctot++;
+                    if(entry.asm === 'x') masm++;
+                }
             }
-            
+
             document.getElementById('ctot').textContent = ctot;
             document.getElementById('nctot').textContent = nctot;
             document.getElementById('masm').textContent = masm;
         }
 
-        function openModal(month, day) {
-            selectedCell = { month, day };
-            document.querySelector('.modal-date').textContent = `${month} ${day}, ${currentYear}`;
-            document.querySelector('.modal').style.display = 'block';
-            document.querySelector('.overlay').style.display = 'block';
-            
-            const data = JSON.parse(localStorage.getItem(getStorageKey(month, day)) || '{}');
-            
-            document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
-            
-            if (data.seizure) {
-                document.querySelector(`.seizure-btn[data-type="${data.seizure}"]`).classList.add('active');
-            }
-            if (data.asm === 'x') {
-                document.querySelector('.asm-btn').classList.add('active');
-            }
-            if (data.triggers) {
-                data.triggers.forEach(trigger => {
-                    document.querySelector(`.trigger-btn[data-trigger="${trigger}"]`).classList.add('active');
-                });
-            }
-        }
-
-        function closeModal() {
-            document.querySelector('.modal').style.display = 'none';
-            document.querySelector('.overlay').style.display = 'none';
-        }
-
-        document.querySelectorAll('.seizure-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.seizure-btn').forEach(b => b.classList.remove('active'));
-                const data = JSON.parse(localStorage.getItem(getStorageKey(selectedCell.month, selectedCell.day)) || '{}');
-                if (this.classList.contains('active')) {
-                    this.classList.remove('active');
-                    data.seizure = '';
-                } else {
-                    this.classList.add('active');
-                    data.seizure = this.dataset.type;
-                }
-                saveData(selectedCell.month, selectedCell.day, data);
-                loadData();
-            });
-        });
-
-        document.querySelector('.asm-btn').addEventListener('click', function() {
-            const data = JSON.parse(localStorage.getItem(getStorageKey(selectedCell.month, selectedCell.day)) || '{}');
-            if (this.classList.contains('active')) {
-                this.classList.remove('active');
-                data.asm = '';
-            } else {
-                this.classList.add('active');
-                data.asm = 'x';
-            }
-            saveData(selectedCell.month, selectedCell.day, data);
-            loadData();
-        });
-
-        document.querySelectorAll('.trigger-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const data = JSON.parse(localStorage.getItem(getStorageKey(selectedCell.month, selectedCell.day)) || '{}');
-                data.triggers = data.triggers || [];
-                const trigger = this.dataset.trigger;
-                
-                if (this.classList.contains('active')) {
-                    this.classList.remove('active');
-                    data.triggers = data.triggers.filter(t => t !== trigger);
-                } else {
-                    this.classList.add('active');
-                    data.triggers.push(trigger);
-                }
-                
-                if (data.triggers.length === 0) {
-                    delete data.triggers;
-                }
-                
-                saveData(selectedCell.month, selectedCell.day, data);
-                loadData();
-            });
-        });
-
         function printSummary() {
             window.print();
         }
 
-        // Initialize
-        updateYear();
+        // Initialize the diary
+        initDiary();
     </script>
 </body>
 </html>

@@ -19,7 +19,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;  /* Reduced margin */
             flex-wrap: wrap;
         }
 
@@ -55,51 +55,49 @@
             cursor: pointer;
         }
 
-        /* Updated table styles */
         .diary-table {
             border-collapse: collapse;
             width: 100%;
             table-layout: fixed;
         }
 
-        /* Default cell styles */
         .diary-table th, .diary-table td {
             border: 1px solid #000;
-            padding: 2px;
+            padding: 1px;
             text-align: center;
-            width: calc((100% - 100px) / 31);  /* Distribute remaining width among day columns */
+            width: calc((100% - 100px) / 31);
         }
 
-        /* First column width */
         .diary-table th:first-child,
         .diary-table td:first-child {
-            width: 100px;  /* Fixed width for month column */
+            width: 100px;
             border-left: 2px solid #000;
             border-right: 2px solid #000;
         }
 
-        /* Thicker borders for header row */
         .diary-table thead tr th {
             border: 2px solid #000;
             background: #f0f0f0;
+            padding: 1px;
+            font-size: 11px;
         }
 
-        /* Extra thick borders for first cell where borders meet */
         .diary-table th:first-child {
             border: 2px solid #000;
         }
 
         .diary-cell {
-            height: 60px;
+            height: 45px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .diary-cell > div {
-            padding: 2px 0;
+            padding: 1px 0;
+            line-height: 1.2;
         }
 
         .modal {
@@ -169,7 +167,7 @@
         <div class="summary">
             <span>3 month summary:</span>
             <span>Convulsive seizure days: <span id="ctot">0</span></span>
-            <span>Focal non-convulsive seizure days: <span id="nctot">0</span></span>
+            <span>Non-convulsive seizure days: <span id="nctot">0</span></span>
             <span>Missed ASM days: <span id="masm">0</span></span>
         </div>
         <button class="print-btn" onclick="printSummary()">Print Summary</button>
@@ -214,7 +212,6 @@
         let selectedDate = null;
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
-        // Check if localStorage is available
         function isStorageAvailable() {
             try {
                 const test = '__storage_test__';
@@ -226,7 +223,6 @@
             }
         }
 
-        // Safe localStorage wrapper functions
         function safeSetItem(key, value) {
             try {
                 if (isStorageAvailable()) {

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seizure Diary</title>
     <style>
-        /* Style section remains exactly the same as before */
         body {
             margin: 0;
             padding: 20px;
@@ -56,28 +55,38 @@
             cursor: pointer;
         }
 
+        /* Updated table styles */
         .diary-table {
             border-collapse: collapse;
             width: 100%;
             table-layout: fixed;
         }
 
-        /* Style for all columns */
+        /* Default cell styles */
         .diary-table th, .diary-table td {
             border: 1px solid #000;
             padding: 2px;
             text-align: center;
             width: calc((100% - 100px) / 31);  /* Distribute remaining width among day columns */
         }
-        
-        /* Style specifically for the first column */
+
+        /* First column width */
         .diary-table th:first-child,
         .diary-table td:first-child {
-            width: 120px;  /* Fixed width for month column */
+            width: 100px;  /* Fixed width for month column */
+            border-left: 2px solid #000;
+            border-right: 2px solid #000;
         }
 
-        .diary-table th {
+        /* Thicker borders for header row */
+        .diary-table thead tr th {
+            border: 2px solid #000;
             background: #f0f0f0;
+        }
+
+        /* Extra thick borders for first cell where borders meet */
+        .diary-table th:first-child {
+            border: 2px solid #000;
         }
 
         .diary-cell {
@@ -153,7 +162,6 @@
     </style>
 </head>
 <body>
-    <!-- HTML structure remains exactly the same as before -->
     <div class="function-bar">
         <span class="year-display"></span>
         <button class="year-nav" onclick="changeYear(-1)"><<</button>
@@ -257,7 +265,6 @@
             }
         }
 
-        // Initialize the diary
         function initDiary() {
             if (!isStorageAvailable()) {
                 alert('Local storage is not available. Your data will not be saved.');
@@ -276,18 +283,15 @@
             const thead = document.querySelector('.diary-table thead tr');
             const tbody = document.querySelector('.diary-table tbody');
             
-            // Clear existing content
             while(thead.children.length > 1) thead.removeChild(thead.lastChild);
             tbody.innerHTML = '';
 
-            // Create header
             for(let day = 1; day <= 31; day++) {
                 const th = document.createElement('th');
                 th.textContent = day;
                 thead.appendChild(th);
             }
 
-            // Create rows
             months.forEach(month => {
                 const tr = document.createElement('tr');
                 const monthCell = document.createElement('td');
@@ -323,12 +327,10 @@
             selectedDate = cell.getAttribute('data-date');
             document.getElementById('modal-date').textContent = date;
             
-            // Reset all buttons
             document.querySelectorAll('.toggle-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
 
-            // Set current values
             const data = loadEntry(selectedDate);
             if(data) {
                 if(data.seizure) {
@@ -352,24 +354,20 @@
             selectedDate = null;
         }
 
-        // Handle button clicks in modal
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.onclick = function() {
                 const type = this.getAttribute('data-type');
                 
                 if(type === 'seizure' || type === 'asm') {
-                    // If clicking an already active button, just deactivate it
                     if(this.classList.contains('active')) {
                         this.classList.remove('active');
                     } else {
-                        // Otherwise, deactivate others in the same row and activate this one
                         this.parentElement.querySelectorAll('.toggle-btn').forEach(b => {
                             b.classList.remove('active');
                         });
                         this.classList.add('active');
                     }
                 } else {
-                    // For triggers, simply toggle the active state
                     this.classList.toggle('active');
                 }
                 
@@ -432,7 +430,6 @@
             const today = new Date();
             let ctot = 0, nctot = 0, masm = 0;
 
-            // Check last 90 days
             for(let i = 0; i < 90; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() - i);
@@ -455,7 +452,6 @@
             window.print();
         }
 
-        // Initialize the diary with error handling
         try {
             initDiary();
         } catch (e) {

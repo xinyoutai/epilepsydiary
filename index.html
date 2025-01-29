@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seizure Diary</title>
     <style>
+        /* Style section remains exactly the same as before */
         body {
             margin: 0;
             padding: 20px;
@@ -85,7 +86,6 @@
             padding: 2px 0;
         }
 
-        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -146,6 +146,7 @@
     </style>
 </head>
 <body>
+    <!-- HTML structure remains exactly the same as before -->
     <div class="function-bar">
         <span class="year-display"></span>
         <button class="year-nav" onclick="changeYear(-1)"><<</button>
@@ -198,8 +199,62 @@
         let selectedDate = null;
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
+        // Check if localStorage is available
+        function isStorageAvailable() {
+            try {
+                const test = '__storage_test__';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch(e) {
+                return false;
+            }
+        }
+
+        // Safe localStorage wrapper functions
+        function safeSetItem(key, value) {
+            try {
+                if (isStorageAvailable()) {
+                    localStorage.setItem(key, value);
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                console.error('Error saving to localStorage:', e);
+                return false;
+            }
+        }
+
+        function safeGetItem(key) {
+            try {
+                if (isStorageAvailable()) {
+                    return localStorage.getItem(key);
+                }
+                return null;
+            } catch (e) {
+                console.error('Error reading from localStorage:', e);
+                return null;
+            }
+        }
+
+        function safeRemoveItem(key) {
+            try {
+                if (isStorageAvailable()) {
+                    localStorage.removeItem(key);
+                    return true;
+                }
+                return false;
+            } catch (e) {
+                console.error('Error removing from localStorage:', e);
+                return false;
+            }
+        }
+
         // Initialize the diary
         function initDiary() {
+            if (!isStorageAvailable()) {
+                alert('Local storage is not available. Your data will not be saved.');
+            }
             updateYearDisplay();
             createTable();
             loadData();
@@ -294,16 +349,23 @@
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.onclick = function() {
                 const type = this.getAttribute('data-type');
-                const value = this.getAttribute('data-value');
-
+                
                 if(type === 'seizure' || type === 'asm') {
-                    // Unselect other buttons in the same row
-                    this.parentElement.querySelectorAll('.toggle-btn').forEach(b => {
-                        b.classList.remove('active');
-                    });
+                    // If clicking an already active button, just deactivate it
+                    if(this.classList.contains('active')) {
+                        this.classList.remove('active');
+                    } else {
+                        // Otherwise, deactivate others in the same row and activate this one
+                        this.parentElement.querySelectorAll('.toggle-btn').forEach(b => {
+                            b.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                    }
+                } else {
+                    // For triggers, simply toggle the active state
+                    this.classList.toggle('active');
                 }
-
-                this.classList.toggle('active');
+                
                 saveEntry();
             };
         });
@@ -317,14 +379,24 @@
                 triggers: Array.from(document.querySelectorAll('.toggle-btn[data-type="trigger"].active')).map(btn => btn.getAttribute('data-value'))
             };
 
-            localStorage.setItem(selectedDate, JSON.stringify(entry));
-            updateCell(selectedDate);
-            updateSummary();
+            try {
+                safeSetItem(selectedDate, JSON.stringify(entry));
+                updateCell(selectedDate);
+                updateSummary();
+            } catch (e) {
+                console.error('Error saving entry:', e);
+                alert('Failed to save entry. Please try again.');
+            }
         }
 
         function loadEntry(date) {
-            const data = localStorage.getItem(date);
-            return data ? JSON.parse(data) : null;
+            try {
+                const data = safeGetItem(date);
+                return data ? JSON.parse(data) : null;
+            } catch (e) {
+                console.error('Error loading entry:', e);
+                return null;
+            }
         }
 
         function loadData() {
@@ -336,6 +408,8 @@
 
         function updateCell(date) {
             const cell = document.querySelector(`.diary-cell[data-date="${date}"]`);
+            if (!cell) return;
+            
             const data = loadEntry(date);
             
             if(data) {
@@ -374,8 +448,13 @@
             window.print();
         }
 
-        // Initialize the diary
-        initDiary();
+        // Initialize the diary with error handling
+        try {
+            initDiary();
+        } catch (e) {
+            console.error('Error initializing diary:', e);
+            alert('There was an error initializing the diary. Please refresh the page.');
+        }
     </script>
 </body>
 </html>

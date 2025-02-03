@@ -223,11 +223,15 @@
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
         function formatStorageDate(year, month, day) {
-            // Ensure month is 1-12 and properly padded
-            const monthIndex = months.indexOf(month) + 1;
-            const paddedMonth = monthIndex.toString().padStart(2, '0');
-            const paddedDay = day.toString().padStart(2, '0');
-            return `${year}-${paddedMonth}-${paddedDay}`;
+            let monthNum;
+            if (typeof month === 'string') {
+                // If month is a string like 'Jan', convert it to number
+                monthNum = months.indexOf(month) + 1;
+            } else {
+                // If month is already a number
+                monthNum = parseInt(month);
+            }
+            return `${year}-${monthNum.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         }
 
         function isStorageAvailable() {
@@ -432,16 +436,16 @@
             const today = new Date();
             let ctot = 0, nctot = 0, masm = 0;
 
+            // Create storage keys for the last 90 days
             for(let i = 0; i < 90; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() - i);
-                const storageDate = formatStorageDate(
-                    date.getFullYear(),
-                    months[date.getMonth()],
-                    date.getDate()
-                );
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const storageDate = `${year}-${month}-${day}`;
+                
                 const entry = loadEntry(storageDate);
-
                 if(entry) {
                     if(entry.seizure === 'C') ctot++;
                     if(entry.seizure === 'F') nctot++;

@@ -19,7 +19,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 10px;  /* Reduced margin */
+            margin-bottom: 10px;
             flex-wrap: wrap;
         }
 
@@ -53,6 +53,15 @@
             background: white;
             border-radius: 4px;
             cursor: pointer;
+        }
+
+        .clear-btn {
+            padding: 8px 15px;
+            border: 1px solid #000;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
         }
 
         .diary-table {
@@ -171,6 +180,7 @@
             <span>Missed ASM days: <span id="masm">0</span></span>
         </div>
         <button class="print-btn" onclick="printSummary()">Print Summary</button>
+        <button class="clear-btn" onclick="clearAllData()">Clear All Data</button>
     </div>
 
     <table class="diary-table">
@@ -211,7 +221,15 @@
         let currentYear = new Date().getFullYear();
         let selectedDate = null;
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        
+
+        function formatStorageDate(year, month, day) {
+            // Ensure month is 1-12 and properly padded
+            const monthIndex = months.indexOf(month) + 1;
+            const paddedMonth = monthIndex.toString().padStart(2, '0');
+            const paddedDay = day.toString().padStart(2, '0');
+            return `${year}-${paddedMonth}-${paddedDay}`;
+        }
+
         function isStorageAvailable() {
             try {
                 const test = '__storage_test__';
@@ -248,19 +266,6 @@
             }
         }
 
-        function safeRemoveItem(key) {
-            try {
-                if (isStorageAvailable()) {
-                    localStorage.removeItem(key);
-                    return true;
-                }
-                return false;
-            } catch (e) {
-                console.error('Error removing from localStorage:', e);
-                return false;
-            }
-        }
-
         function initDiary() {
             if (!isStorageAvailable()) {
                 alert('Local storage is not available. Your data will not be saved.');
@@ -288,7 +293,7 @@
                 thead.appendChild(th);
             }
 
-            months.forEach(month => {
+            months.forEach((month, monthIndex) => {
                 const tr = document.createElement('tr');
                 const monthCell = document.createElement('td');
                 monthCell.textContent = month;
@@ -298,7 +303,8 @@
                     const td = document.createElement('td');
                     const cell = document.createElement('div');
                     cell.className = 'diary-cell';
-                    cell.setAttribute('data-date', `${currentYear}-${month}-${day}`);
+                    const storageDate = formatStorageDate(currentYear, month, day);
+                    cell.setAttribute('data-date', storageDate);
                     
                     for(let i = 0; i < 3; i++) {
                         const div = document.createElement('div');
@@ -319,9 +325,9 @@
             initDiary();
         }
 
-        function openModal(date, cell) {
+        function openModal(displayDate, cell) {
             selectedDate = cell.getAttribute('data-date');
-            document.getElementById('modal-date').textContent = date;
+            document.getElementById('modal-date').textContent = displayDate;
             
             document.querySelectorAll('.toggle-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -429,8 +435,12 @@
             for(let i = 0; i < 90; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() - i);
-                const dateStr = `${date.getFullYear()}-${months[date.getMonth()]}-${date.getDate()}`;
-                const entry = loadEntry(dateStr);
+                const storageDate = formatStorageDate(
+                    date.getFullYear(),
+                    months[date.getMonth()],
+                    date.getDate()
+                );
+                const entry = loadEntry(storageDate);
 
                 if(entry) {
                     if(entry.seizure === 'C') ctot++;
@@ -448,12 +458,27 @@
             window.print();
         }
 
-        try {
-            initDiary();
-        } catch (e) {
-            console.error('Error initializing diary:', e);
-            alert('There was an error initializing the diary. Please refresh the page.');
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all diary data? This cannot be undone.')) {
+                try {
+                    // Clear only diary-related items from localStorage
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        // Only remove items that match our date format (YYYY-MM-DD)
+                        if (key && key.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                    initDiary(); // Refresh the display
+                    alert('All diary data has been cleared.');
+                } catch (e) {
+                    console.error('Error clearing data:', e);
+                    alert('There was an error clearing the data. Please try again.');
+                }
+            }
         }
+
+        initDiary();
     </script>
 </body>
 </html>

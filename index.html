@@ -77,6 +77,10 @@
             width: calc((100% - 100px) / 31);
         }
 
+        .today-cell {
+            border: 3px solid #000 !important;
+        }
+
         .diary-table th:first-child,
         .diary-table td:first-child {
             width: 100px;
@@ -176,7 +180,7 @@
         <div class="summary">
             <span>3 month summary:</span>
             <span>Convulsive seizure days: <span id="ctot">0</span></span>
-            <span>Focal non-convulsive seizure days: <span id="nctot">0</span></span>
+            <span>Non-convulsive seizure days: <span id="nctot">0</span></span>
             <span>Missed ASM days: <span id="masm">0</span></span>
         </div>
         <button class="print-btn" onclick="printSummary()">Print Summary</button>
@@ -309,6 +313,15 @@
                     cell.className = 'diary-cell';
                     const storageDate = formatStorageDate(currentYear, month, day);
                     cell.setAttribute('data-date', storageDate);
+                    
+                    // Check if this cell represents today
+                    const today = new Date();
+                    const isToday = currentYear === today.getFullYear() &&
+                                  monthIndex === today.getMonth() &&
+                                  day === today.getDate();
+                    if (isToday) {
+                        td.className = 'today-cell';
+                    }
                     
                     for(let i = 0; i < 3; i++) {
                         const div = document.createElement('div');
